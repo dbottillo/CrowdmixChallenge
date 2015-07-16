@@ -2,6 +2,7 @@ package com.danielebottillo.crowdmixchallenge;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,7 +32,7 @@ import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
     private static final String TWITTER_KEY = "T5ih6qRh6awRZJyepLsi3qBOM";
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     TweetAdapter tweetAdapter;
     ArrayList<Tweet> tweets;
     ListView tweetsList;
+    SwipeRefreshLayout mSwipeRefreshLayout;
 
     SegmentedLoader loader;
     private boolean isLoading;
@@ -54,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
         Fabric.with(this, new Twitter(authConfig));
         setContentView(R.layout.activity_main);
 
+        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.tweets_list_swipe_refresh_layout);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
         tweetsList = (ListView) findViewById(R.id.tweets_list);
 
         errorMessage = (TextView) findViewById(R.id.error_message);
@@ -67,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void success(Result<TwitterSession> result) {
                 signIn.setVisibility(View.GONE);
-                loadTweets(result.data);
+                loadTweets();
             }
 
             @Override
@@ -81,20 +85,23 @@ public class MainActivity extends AppCompatActivity {
         tweetsList.setAdapter(tweetAdapter);
     }
 
-    private void loadTweets(TwitterSession session) {
+    private void loadTweets() {
         if (isLoading) {
             return;
         }
         boolean isConnected = NetworkUtil.isConnected(getBaseContext());
         if (isConnected) {
             isLoading = true;
-            showLoader();
+            if (tweets.size() == 0){
+                showLoader();
+            }
             TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
             StatusesService statusesService = twitterApiClient.getStatusesService();
             statusesService.homeTimeline(20, null, null, null, false, true, true, tweetCallback);
         } else {
             // show offline
             showErrorMessage(getString(R.string.offline));
+            mSwipeRefreshLayout.setRefreshing(false);
         }
     }
 
@@ -103,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
         public void success(Result<List<Tweet>> result) {
             isLoading = false;
             loader.hide();
+            mSwipeRefreshLayout.setRefreshing(false);
             tweets.clear();
             for (Tweet tweet : result.data) {
                 tweets.add(tweet);
@@ -113,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
         public void failure(TwitterException exception) {
             isLoading = false;
             loader.hide();
+            mSwipeRefreshLayout.setRefreshing(false);
             showErrorMessage(exception.getLocalizedMessage());
         }
     };
@@ -136,32 +145,15 @@ public class MainActivity extends AppCompatActivity {
         loader.show();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     private void setupLoader() {
         loader.addSegment(new Segment().setStartLeftPoint(10, 0).setStartRightPoint(10, 2).setEndRightPoint(0, 2).setEndLeftPoint(0, 0));
         loader.addSegment(new Segment().setStartLeftPoint(0, 2).setStartRightPoint(2, 2).setEndRightPoint(2, 8).setEndLeftPoint(0, 8));
         loader.addSegment(new Segment().setStartLeftPoint(0, 8).setStartRightPoint(0, 10).setEndRightPoint(10, 10).setEndLeftPoint(10, 8));
         loader.hide();
+    }
+
+    @Override
+    public void onRefresh() {
+        loadTweets();
     }
 }

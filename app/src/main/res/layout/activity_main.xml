@@ -1,9 +1,9 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:myapp="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:myapp="http://schemas.android.com/apk/res-auto"
     tools:context=".MainActivity">
 
     <com.twitter.sdk.android.core.identity.TwitterLoginButton
@@ -12,10 +12,16 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"/>
 
-    <ListView
-        android:id="@+id/tweets_list"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/tweets_list_swipe_refresh_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content">
+
+        <ListView
+            android:id="@+id/tweets_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </android.support.v4.widget.SwipeRefreshLayout>
 
     <com.danielebottillo.segmentedloader.SegmentedLoader
         android:id="@+id/loader"
@@ -26,7 +32,7 @@
         myapp:fill_on_start="true"
         myapp:reversed="true"
         myapp:speed="2500"
-        myapp:start_color="#f80046" />
+        myapp:start_color="#f80046"/>
 
     <TextView
         android:id="@+id/error_message"
@@ -36,6 +42,6 @@
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         android:gravity="center"
-        android:textStyle="italic" />
+        android:textStyle="italic"/>
 
 </RelativeLayout>
