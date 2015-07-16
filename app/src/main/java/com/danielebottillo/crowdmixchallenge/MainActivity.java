@@ -1,12 +1,17 @@
 package com.danielebottillo.crowdmixchallenge;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.text.InputType;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,9 +37,8 @@ import java.util.List;
 
 import io.fabric.sdk.android.Fabric;
 
-public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener, View.OnClickListener {
 
-    // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
     private static final String TWITTER_KEY = "T5ih6qRh6awRZJyepLsi3qBOM";
     private static final String TWITTER_SECRET = "uBX8AVSdA125reCyuMcHIbYzORXRPqZXxF3EoCrlzjE2W0fUIK";
 
@@ -43,6 +47,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     ArrayList<Tweet> tweets;
     ListView tweetsList;
     SwipeRefreshLayout mSwipeRefreshLayout;
+
+    FloatingActionButton composeTweet;
 
     SegmentedLoader loader;
     private boolean isLoading;
@@ -55,6 +61,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
         Fabric.with(this, new Twitter(authConfig));
         setContentView(R.layout.activity_main);
+
+        composeTweet = (FloatingActionButton) findViewById(R.id.compose_tweet);
+        composeTweet.setVisibility(View.GONE);
+        composeTweet.setOnClickListener(this);
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.tweets_list_swipe_refresh_layout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
@@ -92,15 +102,14 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         boolean isConnected = NetworkUtil.isConnected(getBaseContext());
         if (isConnected) {
             isLoading = true;
-            if (tweets.size() == 0){
+            if (tweets.size() == 0) {
                 showLoader();
             }
             TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
             StatusesService statusesService = twitterApiClient.getStatusesService();
             statusesService.homeTimeline(20, null, null, null, false, true, true, tweetCallback);
         } else {
-            // show offline
-            showErrorMessage(getString(R.string.offline));
+            Toast.makeText(this, getString(R.string.offline), Toast.LENGTH_SHORT).show();
             mSwipeRefreshLayout.setRefreshing(false);
         }
     }
@@ -110,6 +119,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         public void success(Result<List<Tweet>> result) {
             isLoading = false;
             loader.hide();
+            if (tweets.size() == 0) {
+                animateFab();
+            }
             mSwipeRefreshLayout.setRefreshing(false);
             tweets.clear();
             for (Tweet tweet : result.data) {
@@ -125,6 +137,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             showErrorMessage(exception.getLocalizedMessage());
         }
     };
+
+    private void animateFab() {
+        composeTweet.setScaleX(0.0f);
+        composeTweet.setScaleY(0.0f);
+        composeTweet.setVisibility(View.VISIBLE);
+        ObjectAnimator scaleFabUp = ObjectAnimator.ofPropertyValuesHolder(composeTweet,
+                PropertyValuesHolder.ofFloat("scaleX", 1.0f),
+                PropertyValuesHolder.ofFloat("scaleY", 1.0f));
+        scaleFabUp.setDuration(200).start();
+    }
 
     private void showErrorMessage(String message) {
         errorMessage.setVisibility(View.VISIBLE);
@@ -155,5 +177,54 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     public void onRefresh() {
         loadTweets();
+    }
+
+    @Override
+    public void onClick(View v) {
+        boolean isConnected = NetworkUtil.isConnected(getBaseContext());
+        if (isConnected) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.compose_tweet);
+            final EditText input = new EditText(this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
+            builder.setPositiveButton(R.string.post_tweet, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    sendTweet(input.getText().toString());
+                }
+            });
+            builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+
+            builder.show();
+        } else {
+            Toast.makeText(this, getString(R.string.offline), Toast.LENGTH_SHORT).show();
+            mSwipeRefreshLayout.setRefreshing(false);
+        }
+    }
+
+    private void sendTweet(String text) {
+        TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
+        StatusesService statusesService = twitterApiClient.getStatusesService();
+        showLoader();
+        statusesService.update(text, null, null, null, null, null, null, null, new Callback<Tweet>() {
+            @Override
+            public void success(Result<Tweet> result) {
+                loader.hide();
+                tweets.add(0, result.data);
+                tweetAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void failure(TwitterException e) {
+                loader.hide();
+                Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

@@ -5,4 +5,7 @@
     <string name="action_settings">Settings</string>
     <string name="offline">This demo doesn\'t work offline, try again when you are online!</string>
     <string name="no_results">There are now tweets for this user!.</string>
+    <string name="post_tweet">Tweet</string>
+    <string name="cancel">Cancel</string>
+    <string name="compose_tweet">Compose a tweet</string>
 </resources>

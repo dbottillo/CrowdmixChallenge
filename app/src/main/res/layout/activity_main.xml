@@ -1,10 +1,8 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:myapp="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:layout_height="match_parent">
 
     <com.twitter.sdk.android.core.identity.TwitterLoginButton
         android:id="@+id/sign_in"
@@ -43,5 +41,19 @@
         android:layout_marginRight="16dp"
         android:gravity="center"
         android:textStyle="italic"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/compose_tweet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:src="@drawable/add"
+        android:tint="@android:color/white"
+        myapp:borderWidth="0dp"
+        myapp:elevation="6dp"
+        myapp:pressedTranslationZ="12dp"/>
 
 </RelativeLayout>
