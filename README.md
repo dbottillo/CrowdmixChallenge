@@ -7,7 +7,7 @@ This small project lets you log in with Twitter, retrieve your home timeline and
 
 ##APK
 
-You can find the apk [here](https://github.com/dbottillo/CrowdmixChallenge/app-debug-unaligned.apk)
+You can find the apk [here](https://github.com/dbottillo/CrowdmixChallenge/blob/master/app-debug-unaligned.apk)
 
 ##Screenshots:
 ![SegmentedLoader - login](screenshots/login.png)
